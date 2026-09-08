@@ -1582,8 +1582,6 @@ public class GameScene extends PixelScene {
 	}
 	
 	public static boolean cancelCellSelector() {
-
-	public static boolean cancelCellSelector() {
 		cellSelector.resetKeyHold();
 		if (cellSelector.listener != null && cellSelector.listener != defaultCellListener) {
 			cellSelector.resetKeyHold();
