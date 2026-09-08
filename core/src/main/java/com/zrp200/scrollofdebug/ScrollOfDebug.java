@@ -8,7 +8,6 @@ import static java.util.Arrays.copyOfRange;
 import com.shatteredpixel.shatteredpixeldungeon.GamesInProgress;
 import com.shatteredpixel.shatteredpixeldungeon.items.scrolls.Scroll;
 
-import com.badlogic.gdx.utils.StringBuilder;
 import com.shatteredpixel.shatteredpixeldungeon.Dungeon;
 // Commands
 import com.shatteredpixel.shatteredpixeldungeon.actors.Actor;
@@ -380,7 +379,7 @@ public class ScrollOfDebug extends Scroll {
                                 }
                             } else {
                                 // use documentation. (show syntax in addition to description)
-                                builder.append('\n').appendLine(cmd.documentation());
+                                builder.append('\n').append(cmd.documentation()).append('\n');
                             }
                         }
                         output = builder.toString().trim();
@@ -854,16 +853,15 @@ public class ScrollOfDebug extends Scroll {
         return "Scroll of Debug";
     }
     @Override public String desc() {
-        StringBuilder builder = new StringBuilder();
-        builder.appendLine("A scroll that gives you great power, letting you create virtually any item or mob in the game.")
-                .appendLine("\nSupported Commands:");
-        for(Command cmd : Command.values()) builder.appendLine(
-                // this should hopefully fit on one line.
-                String.format("_- %s_: %s", cmd, cmd.summary)
-        );
-        return builder.append("\nPlease note that some possible inputs may crash the game or cause other unexpected behavior, especially if their targets weren't intended to be created or otherwise used arbitrarily.")
-                .toString();
-    }
+		StringBuilder builder = new StringBuilder();
+		builder.append("A scroll that gives you great power, letting you create virtually any item or mob in the game.\n");
+		builder.append("\nSupported Commands:\n");
+		for (Command cmd : Command.values()) {
+			builder.append(String.format(" - %s: %s\n", cmd, cmd.summary));
+		}
+		return builder.append("\nPlease note that some possible inputs may crash the game or cause other unexpected behavior, especially if their")
+				.toString();
+	}
     @Override public boolean isIdentified() {
         return true;
     }
