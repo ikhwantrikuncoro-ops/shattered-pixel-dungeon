@@ -27,7 +27,7 @@ jobs:
           mkdir -p game-build/core/src/main/java/com/zrp200/scrollofdebug
           cp /tmp/debug/ScrollOfDebug-master/*.java game-build/core/src/main/java/com/zrp200/scrollofdebug/
       - name: Apply integration modifications
-        shell: python
+        shell: python {0}
         run: |
           from pathlib import Path
           root = Path("game-build")
@@ -86,13 +86,13 @@ jobs:
           marker2 = "            throws ClassNotFoundException {"
           start = s.index(marker, s.index(dex_support))
           pos = s.index(marker2, start) + len(marker2)
-          s = s[:pos] + "\\n        if (androidApkPath != null) return scanAndroidDex(pckgname);" + s[pos:]
+          s = s[:pos] + "\n        if (androidApkPath != null) return scanAndroidDex(pckgname);" + s[pos:]
           trie.write_text(s)
           launcher = root/"android/src/main/java/com/shatteredpixel/shatteredpixeldungeon/android/AndroidLauncher.java"
           s = launcher.read_text()
           marker = "super.onCreate(savedInstanceState);"
           assert s.count(marker) == 1
-          launcher.write_text(s.replace(marker, marker + "\\n        com.zrp200.scrollofdebug.PackageTrie.setAndroidApkPath(getApplicationInfo().sourceDir);", 1))
+          launcher.write_text(s.replace(marker, marker + "\n        com.zrp200.scrollofdebug.PackageTrie.setAndroidApkPath(getApplicationInfo().sourceDir);", 1))
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
