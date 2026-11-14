@@ -1,6 +1,8 @@
 name: Build Shattered PD 4.0.2 with Scroll of Debug
 on:
   workflow_dispatch:
+  push:
+    branches: [scroll-of-debug]
 
 permissions:
   contents: read
