@@ -1,38 +1,66 @@
-name: Build Shattered PD Scroll of Debug APK
-
+name: Build Shattered PD 4.0.2 with Scroll of Debug
 on:
   workflow_dispatch:
-  push:
-    branches: [scroll-of-debug]
-    paths-ignore:
-      - '**/*.md'
 
 permissions:
   contents: read
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout workflow repository
+        uses: actions/checkout@v4
+      - name: Download official v4.0.2 and Scroll of Debug
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 https://github.com/00-evan/shattered-pixel-dungeon/archive/refs/tags/v4.0.2.zip -o /tmp/game.zip
+          curl -fL --retry 3 https://github.com/Zrp200/ScrollOfDebug/archive/refs/heads/master.zip -o /tmp/debug.zip
+          mkdir -p /tmp/game /tmp/debug
+          unzip -q /tmp/game.zip -d /tmp/game
+          unzip -q /tmp/debug.zip -d /tmp/debug
+          mv /tmp/game/shattered-pixel-dungeon-4.0.2 ./game-build
+          mkdir -p game-build/core/src/main/java/com/zrp200/scrollofdebug
+          cp /tmp/debug/ScrollOfDebug-master/*.java game-build/core/src/main/java/com/zrp200/scrollofdebug/
+      - name: Apply integration modifications
+        shell: python
+        run: |
+          from pathlib import Path
+          root = Path("game-build")
+          scene = root/"core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/scenes/GameScene.java"
+          s = scene.read_text()
+          anchor = "Dungeon.level.playLevelMusic();"
+          assert s.count(anchor) == 1, "GameScene insertion point changed"
+          s = s.replace(anchor, anchor + "\n\t\tcom.zrp200.scrollofdebug.ScrollOfDebug.handleDebug(true);", 1)
+          scene.write_text(s)
+          build = root/"build.gradle"
+          s = build.read_text()
+          old = "appPackageName = 'com.shatteredpixel.shatteredpixeldungeon'"
+          assert old in s
+          build.write_text(s.replace(old, "appPackageName = 'com.shatteredpixel.shatteredpixeldungeon.debugscroll'", 1))
+          # The master ScrollOfDebug source scans JAR files; Android needs DexFile scanning.
+          trie = root/"core/src/main/java/com/zrp200/scrollofdebug/PackageTrie.java"
+          s = trie.read_text()
+          # Android-compatible class discovery requires a further source adjustment.
+          # Fail explicitly rather than silently publishing a nonfunctional APK.
+          if "setAndroidApkPath" not in s:
+              raise RuntimeError("Android DexFile support missing from ScrollOfDebug master. Do not publish an incomplete APK.")
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
       - uses: android-actions/setup-android@v3
-      - name: Install Android SDK
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Build debug APK
+      - name: Compile APK
+        working-directory: game-build
         run: |
-          chmod +x ./gradlew
+          chmod +x gradlew
           ./gradlew :android:assembleDebug --stacktrace --no-daemon
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: ShatteredPD-ScrollOfDebug-APK
-          path: android/build/outputs/apk/debug/*.apk
+          name: ShatteredPD-4.0.2-ScrollOfDebug-APK
+          path: game-build/android/build/outputs/apk/debug/*.apk
           if-no-files-found: error
